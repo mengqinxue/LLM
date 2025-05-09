@@ -1,111 +1,85 @@
+import re
 import ollama
-import requests
 
+# Simulated database
+bookings = {}
 
-# Weather query tool function
-def get_weather(location: str):
-    # Use Open-Meteo's geocoding API to get latitude and longitude
-    geocode_url = "https://geocoding-api.open-meteo.com/v1/search"
-    weather_url = "https://api.open-meteo.com/v1/forecast"
+# Helper function to call Ollama model
+def call_model(prompt):
+    response = ollama.generate(model="deepseek-r1:1.5b", prompt=prompt)
+    return response['response'].strip()
 
-    # Get city coordinates
-    response = requests.get(geocode_url, params={"name": location, "count": 1})
-    data = response.json()
+# Determine user intent
+def determine_intent(user_input):
+    prompt = f"""
+                You are an AI assistant specialized in hotel bookings. Only respond to queries related to booking, 
+                modifying, or canceling reservations. If the query is unrelated, reply with "I can only assist with 
+                booking, modifying, or canceling hotel reservations."
 
-    if not data.get("results"):
-        return f"No information found for location '{location}'."
+                Classify the following input:
+                "{user_input}"
 
-    result = data["results"][0]
-    latitude = result["latitude"]
-    longitude = result["longitude"]
+                Respond in this format:
+                Intent: [booking/modify/cancel/unrelated]
+                """
 
-    # Get weather information
-    weather_response = requests.get(weather_url, params={
-        "latitude": latitude,
-        "longitude": longitude,
-        "current_weather": True
-    })
+    response = call_model(prompt)
 
-    weather_data = weather_response.json()
-    current_weather = weather_data["current_weather"]
+    pattern = r'<think>.*?</think>'
+    response = re.sub(pattern, '', response, flags=re.DOTALL).strip()
 
-    return {
-        "temperature": current_weather["temperature"],
-        "windspeed": current_weather["windspeed"],
-        "weathercode": current_weather["weathercode"]
-    }
+    if response.startswith("Intent:"):
+        return response.split(":")[1].strip()
+    return "unrelated"
 
-# Tool mapping table
-tools = {
-    "get_weather": get_weather
-}
+# Get name and check-in date
+def get_user_info():
+    name = input("Please provide your name: ").strip()
+    date = input("Please provide your check-in date (YYYY-MM-DD): ").strip()
+    return name, date
 
-# Weather description mapping
-WEATHER_CODES = {
-    0: "Clear sky",
-    1: "Mainly clear",
-    2: "Partly cloudy",
-    3: "Overcast",
-    45: "Fog",
-    48: "Depositing rime fog",
-    51: "Light drizzle",
-    53: "Moderate drizzle",
-    55: "Dense drizzle",
-    61: "Slight rain",
-    63: "Moderate rain",
-    65: "Heavy rain",
-    71: "Slight snowfall",
-    73: "Moderate snowfall",
-    75: "Heavy snowfall",
-    95: "Thunderstorm"
-}
-
-# Main program
+# Main agent loop
 def main():
-    print("Welcome to the weather assistant! You can ask me about the weather.")
+    print("Welcome to Hotel Booking Assistant. I can help with booking, modifying, or canceling your reservation.")
     while True:
         user_input = input("\nYou: ")
         if user_input.lower() in ["exit", "quit"]:
             break
 
-        # Let the model decide whether to call a tool
-        prompt = f"""
-                    You are an AI assistant. Please determine if the user's question requires using the weather 
-                    lookup function. If yes, please provide the tool name and parameters; otherwise, reply directly.
-                    
-                    Example:
-                    User asks: "What is the weather in Beijing today?"
-                    Your response should be:
-                    Call tool: get_weather
-                    Parameters: {{"location": "Beijing"}}
-                    
-                    Now analyze the following user input:
-                    "{user_input}"
-                """
+        intent = determine_intent(user_input)
 
-        response = ollama.generate(model="deepseek-r1:1.5b", prompt=prompt)
-        tool_call = response['response'].strip()
+        if intent == "unrelated":
+            print("\nAssistant: I can only assist with booking, modifying, or canceling hotel reservations.")
+            continue
 
-        if tool_call.startswith("Call tool:"):
-            try:
-                tool_name = tool_call.split(":")[1].split("\n")[0].strip()
-                location = eval(tool_call.split("Parameters:")[1].strip())["location"]
-                print(f"Calling {tool_name} to get weather in {location}...")
-                weather_data = tools[tool_name](location)
+        print("\nAssistant: Could you please provide your name and check-in date?")
+        name, date = get_user_info()
 
-                if isinstance(weather_data, dict):
-                    desc = WEATHER_CODES.get(int(weather_data["weathercode"]), "Unknown weather")
-                    reply = f"The current temperature in {location} is {weather_data['temperature']}°C, wind speed is {weather_data['windspeed']} km/h, and the weather condition is: {desc}."
-                else:
-                    reply = weather_data
-            except Exception as e:
-                reply = f"An error occurred: {str(e)}"
+        key = (name.lower(), date)
 
-        else:
-            # Model replies directly
-            reply = ollama.generate(model="deepseek-r1:1.5b", prompt=user_input)['response']
+        if intent == "booking":
+            if key in bookings:
+                print(f"\nAssistant: You already have a booking for {date}.")
+            else:
+                bookings[key] = {"status": "confirmed"}
+                print(f"\nAssistant: Thank you, {name}. Your booking for {date} has been confirmed.")
 
-        print(f"\nAssistant: {reply}")
+        elif intent == "modify":
+            if key not in bookings:
+                print(f"\nAssistant: No booking found for {name} on {date}.")
+            else:
+                new_date = input("Please provide the new check-in date (YYYY-MM-DD): ").strip()
+                del bookings[key]
+                new_key = (name.lower(), new_date)
+                bookings[new_key] = {"status": "modified"}
+                print(f"\nAssistant: Your booking has been updated to {new_date}.")
+
+        elif intent == "cancel":
+            if key not in bookings:
+                print(f"\nAssistant: No booking found for {name} on {date}.")
+            else:
+                del bookings[key]
+                print(f"\nAssistant: Your booking for {date} has been canceled.")
 
 if __name__ == "__main__":
     main()
