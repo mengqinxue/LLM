@@ -1,0 +1,274 @@
+{
+  "name": "RSS Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1380,
+        -240
+      ],
+      "id": "d8e74edb-de1c-49fd-a51c-db387f543577",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://hnrss.org/newest?points=100",
+        "options": {
+          "ignoreSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        -1180,
+        -240
+      ],
+      "id": "5c64e816-7034-4295-a69b-81ee081620b8",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1000,
+        -240
+      ],
+      "id": "da6cd2c5-2287-427f-9a26-bf2d8afff84a",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "resource": "Default",
+        "operation": "Scrape A Url And Get Its Content",
+        "url": "={{ $json.link }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-firecrawl.fireCrawl",
+      "typeVersion": 1,
+      "position": [
+        -820,
+        -240
+      ],
+      "id": "ccf77f4d-a26b-43a4-80a7-dd93bfa7bfb1",
+      "name": "FireCrawl",
+      "credentials": {
+        "fireCrawlApi": {
+          "id": "VEluA6u7qrUoZ9FD",
+          "name": "FireCrawl account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data }}",
+        "options": {
+          "systemMessage": "你是一个新闻助手，我需要你把从网站上获取的数据，整理成一个新闻简报。"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -600,
+        -240
+      ],
+      "id": "3f845acb-6fac-46bb-968e-831db71698b3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -400
+      ],
+      "id": "2155075f-0c48-48c0-8fd1-00c073e2a9aa",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "9OczqOL3eQ83qNEg",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        0
+      ],
+      "id": "f3b2da1b-0bac-41c2-86e1-176d9219f293",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "2Yb5ukPzk4FPLu6R",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -240
+      ],
+      "id": "d3f3a768-2fd3-4cee-a71c-1cc15b64e16e",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output.join(\"\\n\\n\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -240
+      ],
+      "id": "7b8860b1-17b6-46f5-96e6-00409f0d0893",
+      "name": "Markdown"
+    }
+  ],
+  "pinData": {
+    "AI Agent": [
+      {
+        "json": {
+          "output": "**新闻简报：警惕「警察宣传」——新书揭露警方与媒体如何操纵新闻叙事**\n\n---\n\n**标题**：如何识别「警察宣传」？《Copaganda》揭露警方与媒体共谋的新闻操控  \n**作者**：Alec Karakatsanis  \n**发布时间**：2025年5月8日  \n**来源**：Teen Vogue  \n\n---\n\n### **核心内容摘要**  \n1. **新书批判媒体与警方共谋**  \n   法律专家Alec Karakatsanis在新书《Copaganda: How Police and the Media Manipulate Our News》中指出，主流媒体对警务的报道常通过「选择性叙事」美化警察行为，掩盖系统性暴力与不公。书中强调，此类报道模式（即「Copaganda」）通过片面案例塑造公众认知，扭曲社会对治安问题的理解。\n\n2. **「轶事操控」的误导性**  \n   作者援引书中观点称，媒体常以孤立事件（如个别警察的「英雄行为」）掩盖结构性暴力，导致公众忽视警察滥用职权的普遍性。例如，过度渲染「警民冲突中的危险」可能合理化暴力执法，却淡化抗议背后的社会矛盾。\n\n3. **呼吁公众提高媒介素养**  \n   书中建议读者批判性审视新闻：  \n   - 质疑报道是否依赖警方单方信源；  \n   - 关注事件背后的制度性因素而非个体故事；  \n   - 警惕将复杂社会问题简化为「犯罪与惩罚」的叙事。  \n\n---\n\n### **关键引用**  \n> **「通过选择性引用轶事，新闻报道可能扭曲我们对世界的理解。」**  \n> ——《Copaganda》作者Alec Karakatsanis  \n\n---\n\n**背景延伸**  \n- **关键词**：警察暴力、抗议活动、政治叙事、媒介操控  \n- **书籍定位**：本书为近年来对警务-媒体关系最尖锐的批评之一，尤其针对美国社会种族矛盾与治安争议的背景。  \n- **出版反响**：已在社交媒体引发热议，#Copaganda话题下多聚焦媒体如何塑造「警察不可替代」的公众认知。  \n\n---\n\n**原文链接**：[Teen Vogue报道](https://www.teenvogue.com/story/copaganda-when-the-police-and-the-media-manipulate-our-news)  \n**版权信息**：© Condé Nast 2025  \n\n--- \n（简报整理自公开元数据，内容经关键信息提取与结构化重组。）"
+        }
+      },
+      {
+        "json": {
+          "output": "**新闻简报：Motion工程团队宣布数据库迁移至PostgreSQL**  \n**——基于2025年5月13日发布的工程博客内容整理**\n\n---\n\n**标题**  \n《Migrating to Postgres：Motion工程团队的技术转型之路》  \n**作者** Sean Callahan | **发布日期** 2025年5月13日  \n\n---\n\n**核心内容摘要**  \n1. **背景与决策**  \n   - Motion自2022年初起采用CockroachDB数据库，其优势包括**无痛水平扩展**、**多区域部署支持**及**高可用性**。  \n   - 经过三年实践，团队决定迁移至**PostgreSQL**，以优化特定场景下的性能与开发体验。  \n\n2. **迁移动机**  \n   - 尽管CockroachDB适合分布式架构，但PostgreSQL在**查询灵活性**、**生态系统成熟度**及**成本效益**上更契合当前业务需求。  \n   - 文章暗示PostgreSQL的社区支持与工具链为长期维护提供便利。  \n\n3. **技术细节**（需原文补充）  \n   - 文中未透露迁移具体耗时，但提及过程涉及数据同步、兼容性调整与性能测试。  \n\n---\n\n**关键信息速览**  \n- **阅读时间**：8分钟  \n- **配图**：[技术架构示意图](https://miro.medium.com/v2/resize:fit:1084/1*dxp1_R2A5K0eWlUjF8UV7A@2x.png)  \n- **原文链接**：[Motion工程博客](https://engineering.usemotion.com/migrating-to-postgres-3c93dff9c65d)  \n\n---\n\n**后续关注点**  \n- 此次迁移是否影响用户端服务稳定性？  \n- PostgreSQL在超大规模数据场景下的表现如何？  \n\n**编者按**：数据库迁移是企业技术演进的常见举措，Motion的案例或为同类团队提供分布式与单机数据库选型参考。  \n\n---  \n如需深入技术细节，建议阅读原文或关注Motion工程团队后续更新。"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "FireCrawl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FireCrawl": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f08ccc08-c50c-49a5-a918-3529b49f3633",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ce4a7ea55d0b06819bc68f8951079dde40f7af76cd4df6c8613d1cd10cba4d86"
+  },
+  "id": "ClGaxAIPSuGIc6G7",
+  "tags": []
+}
