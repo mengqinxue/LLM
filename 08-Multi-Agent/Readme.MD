@@ -1,0 +1,7 @@
+## Multi-Agent Collaboration
+Multi-agent collaboration means multiple autonomous agents (LLM "nodes") coordinate to achieve an overarching goal that would be difficult for a single agent to handle. Instead of one monolithic prompt, each agent handles a specific subtask or expertise area, and an orchestration layer connects these agent "nodes" into a coherent workflow. This approach is useful for complex systems – for example, a financial analysis might be broken into macro-economic analysis, fundamental company analysis, and quantitative signal analysis, each handled by a different agent specialist. The agents share information and their results are combined to produce a final outcome.
+
+#### Collaboration Pattern 
+* Handoff Collaboration: One agent can handoff control to another agent mid-problem. 
+* Agent as a Tool: In this approach, one agent (often a central planner or manager) calls other agents as if they were tools. Sub-agents don't take over the conversation; instead, the main agent invokes them for specific subtasks and incorporates their results. This model keeps a single thread of control (the main agent orchestrates everything) and tends to simplify coordination. This repo uses the agent-as-tool model: the Portfolio Manager agent remains in charge, using the other specialist agents as tools when it needs their expertise. This choice keeps the overall reasoning transparent and allows parallel execution of sub-tasks, which is ideal for complex analyses.
+
